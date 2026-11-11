@@ -6,6 +6,9 @@
     <title>Invitation Séminaire IA - Expérience AR</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- Charger AR.js directement dans la page pour éviter les bugs de chargement sur mobile -->
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -94,15 +97,24 @@
             40% { transform: scale(1); }
         }
 
-        #ar-video-container {
+        #ar-container {
             position: fixed;
             top:0; left:0;
             width: 100%;
             height: 100%;
-            z-index: 30;
+            z-index: 40;
             background: black;
             display: none;
         }
+
+        /* Corriger le bug d'affichage caméra AR.js sur mobile */
+        .a-canvas {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover;
+        }
+
+        .a-enter-vr, .arjs-loader { display: none !important; }
     </style>
 </head>
 <body class="antialiased">
@@ -122,39 +134,45 @@
 
         <div class="max-w-4xl mx-auto text-center mb-16">
             <h1 class="text-[clamp(2rem,7vw,3.5rem)] font-extrabold mb-6 text-gradient leading-tight">Invitation à réalité augmentée</h1>
-            <p class="text-gray-300 max-w-xl mx-auto text-lg">Testez l'expérience : aucune application à installer, aucune carte à imprimer. Il suffit d'un téléphone.</p>
+            <p class="text-gray-300 max-w-xl mx-auto text-lg">Aucune application à installer, testez directement depuis votre téléphone.</p>
         </div>
 
         <div class="max-w-4xl mx-auto grid md:grid-cols-2 gap-12 items-center mb-16">
             <div class="space-y-8">
                 <div class="flex gap-4 items-start">
+                    <div class="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center shrink-0 text-green-400 font-bold">⚠️</div>
+                    <div>
+                        <h3 class="font-semibold text-lg mb-2">Important</h3>
+                        <p class="text-gray-400 text-sm">
+                            📱 Sur iPhone : utilisez OBLIGATOIREMENT Safari (Chrome et Firefox ne fonctionnent pas pour la caméra, restriction Apple)<br>
+                            📱 Sur Android : utilisez Chrome
+                        </p>
+                    </div>
+                </div>
+                <div class="flex gap-4 items-start">
                     <div class="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center shrink-0 text-primary font-bold">1</div>
                     <div>
-                        <h3 class="font-semibold text-lg mb-2">Ouvrez cette page SUR VOTRE TELEPHONE</h3>
-                        <p class="text-gray-400">
-                            📱 Tapez directement l'adresse du serveur qui s'affiche dans votre preview Arena sur le navigateur Chrome/Safari de votre téléphone.
-                            <br><br>
-                            Vous n'avez pas besoin de scanner de QR code.
-                        </p>
+                        <h3 class="font-semibold text-lg mb-2">Ouvrez cette page SUR VOTRE TÉLÉPHONE</h3>
+                        <p class="text-gray-400">Allez sur le lien que vous avez déployé sur GitHub Pages dans Safari/Chrome.</p>
                     </div>
                 </div>
                 <div class="flex gap-4 items-start">
                     <div class="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center shrink-0 text-primary font-bold">2</div>
                     <div>
-                        <h3 class="font-semibold text-lg mb-2">Cliquez sur le bouton "Lancer l'expérience AR"</h3>
-                        <p class="text-gray-400">Acceptez l'accès à la caméra, c'est tout (pas d'application à installer).</p>
+                        <h3 class="font-semibold text-lg mb-2">Cliquez sur le bouton "Lancer l'AR"</h3>
+                        <p class="text-gray-400">Acceptez SYSTÉMATIQUEMENT la demande d'autorisation d'accès à la caméra quand elle s'affiche.</p>
                     </div>
                 </div>
                 <div class="flex gap-4 items-start">
                     <div class="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center shrink-0 text-primary font-bold">3</div>
                     <div>
-                        <h3 class="font-semibold text-lg mb-2">Pointez la caméra de votre téléphone vers le motif ci-contre (sur votre écran d'ordinateur)</h3>
-                        <p class="text-gray-400">Les éléments 3D apparaîtront directement en relief au dessus du motif, en 2 secondes.</p>
+                        <h3 class="font-semibold text-lg mb-2">Pointez la caméra vers le motif ci-contre</h3>
+                        <p class="text-gray-400">Vous verrez immédiatement le flux de votre caméra s'afficher en plein écran.</p>
                     </div>
                 </div>
 
                 <button id="launch-ar" class="w-full py-4 px-6 rounded-xl bg-gradient-to-r from-primary to-secondary font-semibold hover:scale-[1.02] transition-all animate-pulse-glow">
-                    🚀 Lancer l'expérience AR (utilisez cette page sur votre téléphone)
+                    🚀 Lancer l'expérience AR
                 </button>
 
                 <button id="skip-ar" class="w-full py-3 px-6 rounded-xl glass font-semibold hover:bg-white/15 transition-all">
@@ -164,10 +182,9 @@
 
             <div>
                 <div class="glass rounded-2xl p-8 text-center">
-                    <p class="text-gray-300 mb-4 font-medium">👇 Votre QR code officiel de l'invitation :</p>
-                    <img id="official-qr" src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&color=6366f1&bgcolor=0b0f1a&qzone=2&data=https://moonlightshine1923-ship-it.github.io/invitation-seminaire-ia/" alt="QR Code invitation" class="w-64 h-64 mx-auto rounded-lg border border-white/10 bg-white p-2">
-                    <p class="text-gray-400 text-sm mt-4">📌 Pour tester l'AR : pointez la caméra de votre téléphone vers le motif carré noir ci-dessous</p>
-                    <img src="https://raw.githubusercontent.com/AR-js-org/AR.js/master/data/images/hiro.png" alt="Marqueur AR test" class="w-24 h-24 mx-auto mt-3 rounded bg-white">
+                    <p class="text-gray-300 mb-4 font-medium">👇 Motif à pointer avec la caméra du téléphone :</p>
+                    <img src="https://raw.githubusercontent.com/AR-js-org/AR.js/master/data/images/hiro.png" alt="Marqueur AR test" class="w-64 h-64 mx-auto rounded-lg bg-white">
+                    <p class="text-gray-400 text-sm mt-4">Ce motif sera intégré directement au centre de votre QR code sur les cartes imprimées finales.</p>
                 </div>
             </div>
         </div>
@@ -252,13 +269,64 @@
     </div>
 
     <!-- Container AR -->
-    <div id="ar-container" class="fixed inset-0 z-40 hidden bg-black">
+    <div id="ar-container">
         <button id="close-ar" class="absolute top-6 left-6 z-50 glass px-4 py-2 rounded-lg bg-black/50">
             <i class="fa fa-times mr-2"></i>Quitter
         </button>
-        <div class="absolute bottom-10 left-1/2 -translate-x-1/2 z-50 glass px-6 py-3 rounded-xl text-center max-w-xs">
-            Pointez la caméra vers le motif sur l'écran de votre ordinateur
+
+        <!-- Message de statut caméra -->
+        <div id="camera-status" class="absolute top-6 left-1/2 -translate-x-1/2 z-50 glass px-6 py-3 rounded-xl text-center max-w-xs">
+            <div id="camera-loading" class="flex items-center gap-2">
+                <i class="fa fa-spinner fa-spin text-primary"></i>
+                <span>Activation de la caméra en cours...</span>
+            </div>
+            <div id="camera-error" class="hidden text-red-300">
+                ❌ La caméra n'a pas pu être activée.<br>Vérifiez que vous avez autorisé l'accès.
+            </div>
+            <div id="camera-ok" class="hidden text-green-300">
+                ✅ Caméra activée ! Pointez vers le motif.
+            </div>
         </div>
+
+        <!-- Scène AR -->
+        <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;" vr-mode-ui="enabled: false" renderer="logarithmicDepthBuffer: true;">
+            <a-marker preset="hiro">
+                <!-- Mascotte 3D -->
+                <a-entity position="0 1 0" animation="property: position; to: 0 1.1 0; loop: true; dir: alternate; dur: 2000">
+                    <a-sphere color="#6366f1" radius="0.2"></a-sphere>
+                    <a-sphere color="white" radius="0.08" position="0 0 0.16"></a-sphere>
+                    <a-sphere color="#0b0f1a" radius="0.04" position="0 0 0.22">
+                        <a-animation attribute="scale" to="1.1 0.9 1" dur="2000" repeat="indefinite" direction="alternate"></a-animation>
+                    </a-sphere>
+                    <a-cylinder color="#8b5cf6" radius="0.02" height="0.2" position="0 0.25 0"></a-cylinder>
+                    <a-sphere color="#ec4899" radius="0.04" position="0 0.36 0"></a-sphere>
+                    <a-cylinder color="#6366f1" radius="0.03" height="0.15" position="0.2 0 0" rotation="0 0 -45">
+                        <a-animation attribute="rotation" to="0 0 -60; loop: true; dir: alternate; dur: 500"></a-animation>
+                    </a-cylinder>
+                </a-entity>
+
+                <!-- Bulles infos -->
+                <a-entity position="-1.4 0.8 0">
+                    <a-plane color="#1e1b4b" height="0.4" width="1.6" opacity="0.95" material="transparent:true"></a-plane>
+                    <a-text value="🗓️ 20-21 Novembre 2026" color="white" align="center" position="0 0 0.02" width="3"></a-text>
+                </a-entity>
+                <a-entity position="-1.4 0.2 0">
+                    <a-plane color="#1e1b4b" height="0.4" width="1.6" opacity="0.95" material="transparent:true"></a-plane>
+                    <a-text value="📍 Alger, CIC Cheraga" color="white" align="center" position="0 0 0.02" width="3"></a-text>
+                </a-entity>
+                <a-entity position="-1.4 -0.4 0">
+                    <a-plane color="#1e1b4b" height="0.4" width="1.6" opacity="0.95" material="transparent:true"></a-plane>
+                    <a-text value="🚀 Conférences & Ateliers" color="white" align="center" position="0 0 0.02" width="3"></a-text>
+                </a-entity>
+
+                <!-- Bouton -->
+                <a-entity position="0 -1.2 0" id="ar-info-button">
+                    <a-plane color="#8b5cf6" height="0.5" width="2.2" animation="property: components.material.material.color; type: color; to: #6366f1; loop: true; dir: alternate; dur: 1000"></a-plane>
+                    <a-text value="👉 Voir les informations" color="white" align="center" position="0 0 0.02" width="4"></a-text>
+                </a-entity>
+            </a-marker>
+            <a-entity camera></a-entity>
+        </a-scene>
     </div>
 
     <!-- Chatbot -->
@@ -298,7 +366,6 @@
         </div>
     </div>
 
-    <!-- AR.js Libraries chargées uniquement quand on clique sur le bouton pour éviter les conflits -->
     <script>
         // Animation fond neural
         const canvas = document.getElementById('neural-bg');
@@ -337,78 +404,53 @@
             infoPage.classList.add('hidden'); landing.classList.remove('hidden'); window.scrollTo(0,0);
         });
 
-        // Lancement AR quand on clique sur le bouton
-        let arLoaded = false;
+        // Lancement AR
         document.getElementById('launch-ar').addEventListener('click', async () => {
-            if(!arLoaded) {
-                // Charger AR.js dynamiquement
-                const aframe = document.createElement('script');
-                aframe.src = 'https://aframe.io/releases/1.4.2/aframe.min.js';
-                document.head.appendChild(aframe);
-                await new Promise(r => aframe.onload = r);
-                const arjs = document.createElement('script');
-                arjs.src = 'https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js';
-                document.head.appendChild(arjs);
-                await new Promise(r => arjs.onload = r);
-
-                // Créer la scène AR
-                arContainer.innerHTML += `
-                <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" vr-mode-ui="enabled: false" renderer="logarithmicDepthBuffer: true;">
-                    <a-marker preset="hiro">
-                        <!-- Mascotte 3D -->
-                        <a-entity position="0 1 0" animation="property: position; to: 0 1.1 0; loop: true; dir: alternate; dur: 2000">
-                            <a-sphere color="#6366f1" radius="0.2"></a-sphere>
-                            <a-sphere color="white" radius="0.08" position="0 0 0.16"></a-sphere>
-                            <a-sphere color="#0b0f1a" radius="0.04" position="0 0 0.22">
-                                <a-animation attribute="scale" to="1.1 0.9 1" dur="2000" repeat="indefinite" direction="alternate"></a-animation>
-                            </a-sphere>
-                            <a-cylinder color="#8b5cf6" radius="0.02" height="0.2" position="0 0.25 0"></a-cylinder>
-                            <a-sphere color="#ec4899" radius="0.04" position="0 0.36 0"></a-sphere>
-                            <a-cylinder color="#6366f1" radius="0.03" height="0.15" position="0.2 0 0" rotation="0 0 -45">
-                                <a-animation attribute="rotation" to="0 0 -60; loop: true; dir: alternate; dur: 500"></a-animation>
-                            </a-cylinder>
-                        </a-entity>
-
-                        <!-- Bulles infos -->
-                        <a-entity position="-1.4 0.8 0">
-                            <a-plane color="#1e1b4b" height="0.4" width="1.6" opacity="0.95" material="transparent:true"></a-plane>
-                            <a-text value="🗓️ 20-21 Novembre 2026" color="white" align="center" position="0 0 0.02" width="3"></a-text>
-                        </a-entity>
-                        <a-entity position="-1.4 0.2 0">
-                            <a-plane color="#1e1b4b" height="0.4" width="1.6" opacity="0.95" material="transparent:true"></a-plane>
-                            <a-text value="📍 Alger, CIC Cheraga" color="white" align="center" position="0 0 0.02" width="3"></a-text>
-                        </a-entity>
-                        <a-entity position="-1.4 -0.4 0">
-                            <a-plane color="#1e1b4b" height="0.4" width="1.6" opacity="0.95" material="transparent:true"></a-plane>
-                            <a-text value="🚀 Conférences & Ateliers" color="white" align="center" position="0 0 0.02" width="3"></a-text>
-                        </a-entity>
-
-                        <!-- Bouton -->
-                        <a-entity position="0 -1.2 0" id="ar-info-button">
-                            <a-plane color="#8b5cf6" height="0.5" width="2.2" animation="property: components.material.material.color; type: color; to: #6366f1; loop: true; dir: alternate; dur: 1000"></a-plane>
-                            <a-text value="👉 Voir les informations" color="white" align="center" position="0 0 0.02" width="4"></a-text>
-                        </a-entity>
-                    </a-marker>
-                    <a-entity camera></a-entity>
-                </a-scene>
-                `;
-
-                // Click sur le bouton AR pour aller aux infos
-                document.getElementById('ar-info-button').addEventListener('click', () => {
-                    arContainer.classList.add('hidden');
-                    infoPage.classList.remove('hidden');
-                });
-
-                arLoaded = true;
-            }
-
             landing.classList.add('hidden');
-            arContainer.classList.remove('hidden');
+            arContainer.style.display = 'block';
+
+            // Vérifier accès caméra
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                document.getElementById('camera-loading').classList.add('hidden');
+                document.getElementById('camera-ok').classList.remove('hidden');
+                // Arrêter le stream de test, AR.js va prendre le relais
+                stream.getTracks().forEach(t => t.stop());
+
+                // Si la caméra ne s'affiche pas au bout de 5 secondes, afficher erreur
+                setTimeout(() => {
+                    const videoEl = document.querySelector('video');
+                    if (!videoEl || videoEl.videoWidth === 0) {
+                        document.getElementById('camera-ok').classList.add('hidden');
+                        document.getElementById('camera-error').classList.remove('hidden');
+                    }
+                }, 5000);
+
+            } catch (err) {
+                document.getElementById('camera-loading').classList.add('hidden');
+                document.getElementById('camera-error').classList.remove('hidden');
+                console.error(err);
+            }
         });
 
         document.getElementById('close-ar').addEventListener('click', () => {
-            arContainer.classList.add('hidden');
+            arContainer.style.display = 'none';
+            // Arrêter le flux caméra
+            const videoEl = document.querySelector('video');
+            if (videoEl && videoEl.srcObject) videoEl.srcObject.getTracks().forEach(t => t.stop());
             landing.classList.remove('hidden');
+            // Reset messages statut
+            document.getElementById('camera-loading').classList.remove('hidden');
+            document.getElementById('camera-error').classList.add('hidden');
+            document.getElementById('camera-ok').classList.add('hidden');
+        });
+
+        // Bouton AR vers infos
+        document.getElementById('ar-info-button').addEventListener('click', () => {
+            arContainer.style.display = 'none';
+            const videoEl = document.querySelector('video');
+            if (videoEl && videoEl.srcObject) videoEl.srcObject.getTracks().forEach(t => t.stop());
+            infoPage.classList.remove('hidden');
         });
 
         // Chatbot
@@ -484,5 +526,5 @@ END:VCALENDAR`;
             a.href=url;a.download='seminaire-ia.ics';a.click();URL.revokeObjectURL(url);
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a58c73fd1d38d959',t:'MTc5NDM5MTI1OQ=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a58c73fd1d38d959',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a58c858b5f17376c',t:'MTc5NDM5MTk3OA=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a58c858b5f17376c',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
