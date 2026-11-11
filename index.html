@@ -3,12 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Invitation Séminaire IA - Expérience AR</title>
+    <title>Invitation Séminaire IA</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
-    <!-- Charger AR.js directement dans la page pour éviter les bugs de chargement sur mobile -->
-    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -16,23 +13,29 @@
                     colors: {
                         primary: '#6366f1',
                         secondary: '#8b5cf6',
+                        accent: '#ec4899',
                         dark: '#0b0f1a',
                     },
                     fontFamily: {
                         inter: ['Inter', 'system-ui', 'sans-serif'],
                     },
                     animation: {
-                        'float': 'float 3s ease-in-out infinite',
-                        'pulse-glow': 'pulse-glow 2s infinite',
+                        'float': 'float 4s ease-in-out infinite',
+                        'pulse-glow': 'pulse-glow 2.5s infinite',
+                        'fade-in-up': 'fadeInUp 0.5s ease-out forwards',
                     },
                     keyframes: {
                         float: {
                             '0%, 100%': { transform: 'translateY(0px)' },
-                            '50%': { transform: 'translateY(-10px)' },
+                            '50%': { transform: 'translateY(-8px)' },
                         },
                         'pulse-glow': {
-                            '0%, 100%': { boxShadow: '0 0 20px rgba(139, 92, 246, 0.4)' },
-                            '50%': { boxShadow: '0 0 40px rgba(139, 92, 246, 0.7)' },
+                            '0%, 100%': { boxShadow: '0 0 20px rgba(139, 92, 246, 0.3)' },
+                            '50%': { boxShadow: '0 0 40px rgba(139, 92, 246, 0.6)' },
+                        },
+                        fadeInUp: {
+                            '0%': { opacity: '0', transform: 'translateY(15px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
                         }
                     }
                 }
@@ -42,10 +45,10 @@
     <style type="text/tailwindcss">
         @layer utilities {
             .glass {
-                background: rgba(255, 255, 255, 0.08);
-                backdrop-filter: blur(12px);
-                -webkit-backdrop-filter: blur(12px);
-                border: 1px solid rgba(255, 255, 255, 0.12);
+                background: rgba(255, 255, 255, 0.06);
+                backdrop-filter: blur(16px);
+                -webkit-backdrop-filter: blur(16px);
+                border: 1px solid rgba(255, 255, 255, 0.1);
             }
             .text-gradient {
                 background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
@@ -57,6 +60,7 @@
     </style>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        * { -webkit-tap-highlight-color: transparent; }
         body { font-family: 'Inter', sans-serif; background: #0b0f1a; color: white; overflow-x: hidden; }
 
         #neural-bg {
@@ -66,453 +70,402 @@
             width: 100%;
             height: 100%;
             z-index: 0;
-            opacity: 0.4;
+            opacity: 0.5;
         }
 
+        /* Style des bulles de chat */
         .chat-bubble-bot {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 18px 18px 18px 4px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 20px 20px 20px 4px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
         }
-
         .chat-bubble-user {
             background: linear-gradient(135deg, #6366f1, #8b5cf6);
-            border-radius: 18px 18px 4px 18px;
+            border-radius: 20px 20px 4px 20px;
         }
 
+        /* Indicateur de frappe */
         .typing-indicator span {
             display: inline-block;
             width: 8px;
             height: 8px;
             border-radius: 50%;
-            background-color: rgba(255,255,255,0.7);
+            background-color: rgba(255,255,255,0.6);
             animation: typing 1.4s infinite ease-in-out both;
             margin: 0 2px;
         }
-
         .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
         .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
-
         @keyframes typing {
             0%, 80%, 100% { transform: scale(0); }
             40% { transform: scale(1); }
         }
 
-        #ar-container {
-            position: fixed;
-            top:0; left:0;
-            width: 100%;
-            height: 100%;
-            z-index: 40;
-            background: black;
-            display: none;
-        }
-
-        /* Corriger le bug d'affichage caméra AR.js sur mobile */
-        .a-canvas {
-            width: 100% !important;
-            height: 100% !important;
-            object-fit: cover;
-        }
-
-        .a-enter-vr, .arjs-loader { display: none !important; }
+        /* Scrollbar custom */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(139, 92, 246, 0.4); border-radius: 2px; }
     </style>
 </head>
 <body class="antialiased">
     <canvas id="neural-bg"></canvas>
 
-    <!-- Page d'accueil -->
-    <div id="landing-page" class="relative z-10 min-h-screen px-6 py-10">
-        <header class="max-w-5xl mx-auto flex justify-between items-center mb-16">
-            <div class="flex items-center gap-2">
-                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center">🤖</div>
-                <span class="font-bold text-xl">Séminaire IA</span>
+    <div class="relative z-10 min-h-screen flex flex-col max-w-2xl mx-auto">
+        <!-- Header -->
+        <header class="px-5 py-4 flex items-center justify-between sticky top-0 z-30 glass border-b border-white/5">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center animate-float shadow-lg shadow-primary/20">
+                    🤖
+                </div>
+                <div>
+                    <h2 class="font-semibold">Assistant Invitation IA</h2>
+                    <p class="text-xs text-green-400 flex items-center gap-1">
+                        <span class="inline-block w-1.5 h-1.5 rounded-full bg-green-400"></span>
+                        En ligne
+                    </p>
+                </div>
             </div>
-            <button id="open-chat-landing" class="glass px-4 py-2 rounded-lg text-sm hover:bg-white/15 transition-all">
-                <i class="fa fa-comments-o mr-2"></i>Assistant IA
+            <button id="info-btn" class="text-gray-400 hover:text-white transition-colors px-3 py-2 rounded-lg hover:bg-white/5">
+                <i class="fa fa-info-circle text-lg"></i>
             </button>
         </header>
 
-        <div class="max-w-4xl mx-auto text-center mb-16">
-            <h1 class="text-[clamp(2rem,7vw,3.5rem)] font-extrabold mb-6 text-gradient leading-tight">Invitation à réalité augmentée</h1>
-            <p class="text-gray-300 max-w-xl mx-auto text-lg">Aucune application à installer, testez directement depuis votre téléphone.</p>
-        </div>
-
-        <div class="max-w-4xl mx-auto grid md:grid-cols-2 gap-12 items-center mb-16">
-            <div class="space-y-8">
-                <div class="flex gap-4 items-start">
-                    <div class="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center shrink-0 text-green-400 font-bold">⚠️</div>
-                    <div>
-                        <h3 class="font-semibold text-lg mb-2">Important</h3>
-                        <p class="text-gray-400 text-sm">
-                            📱 Sur iPhone : utilisez OBLIGATOIREMENT Safari (Chrome et Firefox ne fonctionnent pas pour la caméra, restriction Apple)<br>
-                            📱 Sur Android : utilisez Chrome
-                        </p>
-                    </div>
-                </div>
-                <div class="flex gap-4 items-start">
-                    <div class="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center shrink-0 text-primary font-bold">1</div>
-                    <div>
-                        <h3 class="font-semibold text-lg mb-2">Ouvrez cette page SUR VOTRE TÉLÉPHONE</h3>
-                        <p class="text-gray-400">Allez sur le lien que vous avez déployé sur GitHub Pages dans Safari/Chrome.</p>
-                    </div>
-                </div>
-                <div class="flex gap-4 items-start">
-                    <div class="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center shrink-0 text-primary font-bold">2</div>
-                    <div>
-                        <h3 class="font-semibold text-lg mb-2">Cliquez sur le bouton "Lancer l'AR"</h3>
-                        <p class="text-gray-400">Acceptez SYSTÉMATIQUEMENT la demande d'autorisation d'accès à la caméra quand elle s'affiche.</p>
-                    </div>
-                </div>
-                <div class="flex gap-4 items-start">
-                    <div class="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center shrink-0 text-primary font-bold">3</div>
-                    <div>
-                        <h3 class="font-semibold text-lg mb-2">Pointez la caméra vers le motif ci-contre</h3>
-                        <p class="text-gray-400">Vous verrez immédiatement le flux de votre caméra s'afficher en plein écran.</p>
-                    </div>
-                </div>
-
-                <button id="launch-ar" class="w-full py-4 px-6 rounded-xl bg-gradient-to-r from-primary to-secondary font-semibold hover:scale-[1.02] transition-all animate-pulse-glow">
-                    🚀 Lancer l'expérience AR
-                </button>
-
-                <button id="skip-ar" class="w-full py-3 px-6 rounded-xl glass font-semibold hover:bg-white/15 transition-all">
-                    Voir directement la page des informations du séminaire
-                </button>
-            </div>
-
-            <div>
-                <div class="glass rounded-2xl p-8 text-center">
-                    <p class="text-gray-300 mb-4 font-medium">👇 Motif à pointer avec la caméra du téléphone :</p>
-                    <img src="https://raw.githubusercontent.com/AR-js-org/AR.js/master/data/images/hiro.png" alt="Marqueur AR test" class="w-64 h-64 mx-auto rounded-lg bg-white">
-                    <p class="text-gray-400 text-sm mt-4">Ce motif sera intégré directement au centre de votre QR code sur les cartes imprimées finales.</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Page Informations -->
-    <div id="info-page" class="relative z-10 min-h-screen hidden px-6 py-10">
-        <header class="max-w-4xl mx-auto flex justify-between items-center mb-12">
-            <button id="back-to-landing" class="text-gray-400 hover:text-white transition-colors">
-                <i class="fa fa-arrow-left mr-2"></i>Retour à l'accueil
-            </button>
-            <div class="flex items-center gap-2">
-                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center">🤖</div>
-                <span class="font-bold text-xl">Séminaire IA</span>
-            </div>
-        </header>
-
-        <main class="max-w-3xl mx-auto pb-32">
-            <div class="text-center mb-16">
-                <h1 class="text-[clamp(1.8rem,6vw,3rem)] font-extrabold mb-4 text-gradient">Séminaire Intelligence Artificielle</h1>
-                <p class="text-gray-300 text-lg">Toutes les informations pratiques</p>
-            </div>
-
-            <!-- Infos clés -->
-            <div class="grid md:grid-cols-3 gap-6 mb-12">
-                <div class="glass rounded-2xl p-6 text-center">
-                    <div class="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center mx-auto mb-4 text-primary text-xl">🗓️</div>
-                    <h3 class="font-semibold text-lg mb-2">Date et durée</h3>
-                    <p class="text-gray-300">20 et 21 Novembre 2026<br>2 jours complets, de 09h à 18h</p>
-                </div>
-                <div class="glass rounded-2xl p-6 text-center">
-                    <div class="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center mx-auto mb-4 text-primary text-xl">📍</div>
-                    <h3 class="font-semibold text-lg mb-2">Lieu</h3>
-                    <p class="text-gray-300">Centre International de Conférences<br>Cheraga, Alger</p>
-                    <a href="https://maps.google.com/?q=Centre+International+de+Conf%C3%A9rences+d%27Alger" target="_blank" class="text-primary text-sm hover:underline mt-2 inline-block">Obtenir l'itinéraire</a>
-                </div>
-                <div class="glass rounded-2xl p-6 text-center">
-                    <div class="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center mx-auto mb-4 text-primary text-xl">🎯</div>
-                    <h3 class="font-semibold text-lg mb-2">Au programme</h3>
-                    <p class="text-gray-300">Conférences<br>Ateliers pratiques<br>Networking & démonstrations</p>
-                </div>
-            </div>
-
-            <div class="glass rounded-2xl overflow-hidden mb-12">
-                <iframe 
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3197.87629782744!2d2.979!3d36.751!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzYsNDMgMTguMCJOIDLCsDU4IDQ0LjQiRQ!5e0!3m2!1sfr!2sdz!4v1700000000000" 
-                    width="100%" height="300" style="border:0;" allowfullscreen="" loading="lazy">
-                </iframe>
-            </div>
-
-            <h2 class="text-2xl font-bold mb-6 text-gradient">Programme</h2>
-            <div class="space-y-4 mb-12">
-                <div class="glass rounded-xl p-6">
-                    <h3 class="font-semibold text-lg mb-4 text-primary">Jour 1 : 20 Novembre</h3>
-                    <div class="space-y-4 text-gray-300">
-                        <div class="flex gap-4"><span class="font-mono font-medium w-16 shrink-0">09:00</span><span>Accueil et petit-déjeuner</span></div>
-                        <div class="flex gap-4"><span class="font-mono font-medium w-16 shrink-0">10:00</span><span>Cérémonie d'ouverture et conférence inaugurale</span></div>
-                        <div class="flex gap-4"><span class="font-mono font-medium w-16 shrink-0">11:30</span><span>Conférences thématiques : IA dans la santé, l'industrie et la finance</span></div>
-                        <div class="flex gap-4"><span class="font-mono font-medium w-16 shrink-0">14:00</span><span>Tables rondes sectorielles</span></div>
-                        <div class="flex gap-4"><span class="font-mono font-medium w-16 shrink-0">17:30</span><span>Cocktail de networking</span></div>
-                    </div>
-                </div>
-                <div class="glass rounded-xl p-6">
-                    <h3 class="font-semibold text-lg mb-4 text-primary">Jour 2 : 21 Novembre</h3>
-                    <div class="space-y-4 text-gray-300">
-                        <div class="flex gap-4"><span class="font-mono font-medium w-16 shrink-0">09:00</span><span>Ateliers pratiques au choix (tous niveaux)</span></div>
-                        <div class="flex gap-4"><span class="font-mono font-medium w-16 shrink-0">13:30</span><span>Démonstrations de projets et startups IA</span></div>
-                        <div class="flex gap-4"><span class="font-mono font-medium w-16 shrink-0">16:00</span><span>Conférence de clôture et perspectives</span></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="flex flex-col sm:flex-row gap-4">
-                <button id="add-calendar" class="flex-1 py-4 px-6 rounded-xl bg-gradient-to-r from-primary to-secondary font-semibold hover:scale-[1.02] transition-all">
-                    <i class="fa fa-calendar-plus-o mr-2"></i>Ajouter à mon calendrier
-                </button>
-                <button class="flex-1 py-4 px-6 rounded-xl glass font-semibold hover:bg-white/15 transition-all">
-                    <i class="fa fa-envelope-o mr-2"></i>Contacter l'organisation
-                </button>
-            </div>
+        <!-- Zone de conversation -->
+        <main id="chat-container" class="flex-1 px-4 py-6 overflow-y-auto space-y-4 pb-32">
+            <!-- Les messages sont ajoutés automatiquement par JS -->
         </main>
-    </div>
 
-    <!-- Container AR -->
-    <div id="ar-container">
-        <button id="close-ar" class="absolute top-6 left-6 z-50 glass px-4 py-2 rounded-lg bg-black/50">
-            <i class="fa fa-times mr-2"></i>Quitter
-        </button>
-
-        <!-- Message de statut caméra -->
-        <div id="camera-status" class="absolute top-6 left-1/2 -translate-x-1/2 z-50 glass px-6 py-3 rounded-xl text-center max-w-xs">
-            <div id="camera-loading" class="flex items-center gap-2">
-                <i class="fa fa-spinner fa-spin text-primary"></i>
-                <span>Activation de la caméra en cours...</span>
-            </div>
-            <div id="camera-error" class="hidden text-red-300">
-                ❌ La caméra n'a pas pu être activée.<br>Vérifiez que vous avez autorisé l'accès.
-            </div>
-            <div id="camera-ok" class="hidden text-green-300">
-                ✅ Caméra activée ! Pointez vers le motif.
-            </div>
+        <!-- Suggestions rapides -->
+        <div id="quick-replies" class="px-4 pb-3 flex gap-2 overflow-x-auto pb-4 scrollbar-hide">
+            <button class="quick-reply shrink-0 glass px-4 py-2 rounded-full text-sm hover:bg-white/10 transition-all">📍 Lieu de l'événement</button>
+            <button class="quick-reply shrink-0 glass px-4 py-2 rounded-full text-sm hover:bg-white/10 transition-all">🗓️ Quelles sont les dates ?</button>
+            <button class="quick-reply shrink-0 glass px-4 py-2 rounded-full text-sm hover:bg-white/10 transition-all">🚗 Comment venir ?</button>
+            <button class="quick-reply shrink-0 glass px-4 py-2 rounded-full text-sm hover:bg-white/10 transition-all">🍽️ Restauration ?</button>
         </div>
 
-        <!-- Scène AR -->
-        <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;" vr-mode-ui="enabled: false" renderer="logarithmicDepthBuffer: true;">
-            <a-marker preset="hiro">
-                <!-- Mascotte 3D -->
-                <a-entity position="0 1 0" animation="property: position; to: 0 1.1 0; loop: true; dir: alternate; dur: 2000">
-                    <a-sphere color="#6366f1" radius="0.2"></a-sphere>
-                    <a-sphere color="white" radius="0.08" position="0 0 0.16"></a-sphere>
-                    <a-sphere color="#0b0f1a" radius="0.04" position="0 0 0.22">
-                        <a-animation attribute="scale" to="1.1 0.9 1" dur="2000" repeat="indefinite" direction="alternate"></a-animation>
-                    </a-sphere>
-                    <a-cylinder color="#8b5cf6" radius="0.02" height="0.2" position="0 0.25 0"></a-cylinder>
-                    <a-sphere color="#ec4899" radius="0.04" position="0 0.36 0"></a-sphere>
-                    <a-cylinder color="#6366f1" radius="0.03" height="0.15" position="0.2 0 0" rotation="0 0 -45">
-                        <a-animation attribute="rotation" to="0 0 -60; loop: true; dir: alternate; dur: 500"></a-animation>
-                    </a-cylinder>
-                </a-entity>
-
-                <!-- Bulles infos -->
-                <a-entity position="-1.4 0.8 0">
-                    <a-plane color="#1e1b4b" height="0.4" width="1.6" opacity="0.95" material="transparent:true"></a-plane>
-                    <a-text value="🗓️ 20-21 Novembre 2026" color="white" align="center" position="0 0 0.02" width="3"></a-text>
-                </a-entity>
-                <a-entity position="-1.4 0.2 0">
-                    <a-plane color="#1e1b4b" height="0.4" width="1.6" opacity="0.95" material="transparent:true"></a-plane>
-                    <a-text value="📍 Alger, CIC Cheraga" color="white" align="center" position="0 0 0.02" width="3"></a-text>
-                </a-entity>
-                <a-entity position="-1.4 -0.4 0">
-                    <a-plane color="#1e1b4b" height="0.4" width="1.6" opacity="0.95" material="transparent:true"></a-plane>
-                    <a-text value="🚀 Conférences & Ateliers" color="white" align="center" position="0 0 0.02" width="3"></a-text>
-                </a-entity>
-
-                <!-- Bouton -->
-                <a-entity position="0 -1.2 0" id="ar-info-button">
-                    <a-plane color="#8b5cf6" height="0.5" width="2.2" animation="property: components.material.material.color; type: color; to: #6366f1; loop: true; dir: alternate; dur: 1000"></a-plane>
-                    <a-text value="👉 Voir les informations" color="white" align="center" position="0 0 0.02" width="4"></a-text>
-                </a-entity>
-            </a-marker>
-            <a-entity camera></a-entity>
-        </a-scene>
-    </div>
-
-    <!-- Chatbot -->
-    <button id="chat-toggle" class="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center shadow-lg z-40 hover:scale-110 transition-all">
-        <i class="fa fa-comments text-white text-xl"></i>
-    </button>
-
-    <div id="chat-window" class="fixed bottom-24 right-6 w-[calc(100vw-3rem)] sm:w-96 h-[500px] max-h-[70vh] glass rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden transform transition-all translate-y-8 opacity-0 pointer-events-none">
-        <div class="p-4 border-b border-white/10 flex items-center gap-3 bg-gradient-to-r from-primary/30 to-secondary/30">
-            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">🤖</div>
-            <div>
-                <h4 class="font-semibold">Assistant IA du séminaire</h4>
-                <p class="text-xs text-green-400"><span class="inline-block w-2 h-2 rounded-full bg-green-400 mr-1"></span>En ligne</p>
-            </div>
-            <button id="close-chat" class="ml-auto text-gray-400 hover:text-white"><i class="fa fa-times text-lg"></i></button>
-        </div>
-
-        <div id="chat-messages" class="flex-1 p-4 overflow-y-auto space-y-4">
-            <div class="flex items-start gap-3">
-                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center shrink-0">🤖</div>
-                <div class="chat-bubble-bot p-3 max-w-[80%]">Bonjour ! Je suis l'assistant IA du séminaire. Je répondrai à toutes vos questions.</div>
-            </div>
-        </div>
-
-        <div id="typing-indicator" class="px-4 pb-3 hidden">
-            <div class="flex items-start gap-3">
-                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center shrink-0">🤖</div>
-                <div class="chat-bubble-bot p-3 typing-indicator"><span></span><span></span><span></span></div>
-            </div>
-        </div>
-
-        <div class="p-4 border-t border-white/10">
+        <!-- Barre de saisie -->
+        <div class="sticky bottom-0 px-4 py-4 glass border-t border-white/5 z-30">
             <form id="chat-form" class="flex gap-2">
-                <input type="text" id="chat-input" placeholder="Posez votre question..." class="flex-1 bg-white/10 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-primary/50 text-white placeholder:text-gray-400">
-                <button type="submit" class="w-12 h-12 rounded-xl bg-gradient-to-r from-primary to-secondary flex items-center justify-center"><i class="fa fa-paper-plane text-white"></i></button>
+                <input type="text" id="chat-input" placeholder="Posez votre question..." class="flex-1 bg-white/5 rounded-2xl px-5 py-3.5 outline-none focus:ring-2 focus:ring-primary/40 text-white placeholder:text-gray-500 border border-white/5">
+                <button type="submit" class="w-12 h-12 rounded-2xl bg-gradient-to-r from-primary to-secondary flex items-center justify-center hover:scale-105 transition-all shadow-lg shadow-primary/20">
+                    <i class="fa fa-paper-plane text-white"></i>
+                </button>
             </form>
         </div>
     </div>
 
-    <script>
-        // Animation fond neural
+    <!-- Page programme/infos (cachée au départ) -->
+    <div id="info-page" class="fixed inset-0 z-50 bg-dark/95 backdrop-blur-lg transform translate-y-full transition-transform duration-500 overflow-y-auto">
+        <header class="sticky top-0 z-10 glass px-6 py-4 flex items-center justify-between border-b border-white/5">
+            <button id="back-to-chat" class="text-gray-400 hover:text-white transition-colors flex items-center gap-2">
+                <i class="fa fa-arrow-left"></i> Retour
+            </button>
+            <span class="font-semibold text-gradient">Informations complètes</span>
+            <div></div>
+        </header>
+
+        <main class="px-6 py-8 max-w-2xl mx-auto pb-20">
+            <div class="text-center mb-12">
+                <div class="text-4xl mb-4 animate-float">🤖</div>
+                <h1 class="text-3xl font-extrabold mb-2 text-gradient">Séminaire Intelligence Artificielle</h1>
+                <p class="text-gray-400">Découvrez tous les détails de l'événement</p>
+            </div>
+
+            <!-- Infos clés -->
+            <div class="grid sm:grid-cols-3 gap-4 mb-10">
+                <div class="glass rounded-2xl p-5 text-center">
+                    <div class="text-2xl mb-2">🗓️</div>
+                    <h3 class="font-semibold mb-1">Dates</h3>
+                    <p class="text-gray-300 text-sm">20 et 21 Novembre 2026<br>09h - 18h</p>
+                </div>
+                <div class="glass rounded-2xl p-5 text-center">
+                    <div class="text-2xl mb-2">⏱️</div>
+                    <h3 class="font-semibold mb-1">Durée</h3>
+                    <p class="text-gray-300 text-sm">2 jours complets<br></p>
+                </div>
+                <div class="glass rounded-2xl p-5 text-center">
+                    <div class="text-2xl mb-2">📍</div>
+                    <h3 class="font-semibold mb-1">Lieu</h3>
+                    <p class="text-gray-300 text-sm">CIC Cheraga<br>Alger</p>
+                </div>
+            </div>
+
+            <!-- Carte -->
+            <div class="glass rounded-2xl overflow-hidden mb-10">
+                <iframe 
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3197.87629782744!2d2.979!3d36.751!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzYsNDMgMTguMCJOIDLCsDU4IDQ0LjQiRQ!5e0!3m2!1sfr!2sdz!4v1700000000000" 
+                    width="100%" height="250" style="border:0;" allowfullscreen="" loading="lazy">
+                </iframe>
+                <div class="p-4">
+                    <a href="https://maps.google.com/?q=Centre+International+de+Conf%C3%A9rences+d%27Alger" target="_blank" class="text-primary text-sm flex items-center justify-center gap-2">
+                        Obtenir l'itinéraire <i class="fa fa-external-link"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Programme -->
+            <h2 class="text-2xl font-bold mb-6 text-gradient">Programme</h2>
+            <div class="space-y-4 mb-10">
+                <div class="glass rounded-xl p-5">
+                    <h3 class="font-semibold text-lg mb-4 text-primary">Jour 1 : 20 Novembre</h3>
+                    <div class="space-y-3 text-gray-300 text-sm">
+                        <div class="flex gap-4">
+                            <span class="font-mono font-medium w-14 shrink-0 text-primary">09:00</span>
+                            <span>Accueil et petit-déjeuner</span>
+                        </div>
+                        <div class="flex gap-4">
+                            <span class="font-mono font-medium w-14 shrink-0 text-primary">10:00</span>
+                            <span>Cérémonie d'ouverture et conférence inaugurale</span>
+                        </div>
+                        <div class="flex gap-4">
+                            <span class="font-mono font-medium w-14 shrink-0 text-primary">11:30</span>
+                            <span>Conférences : IA dans la santé, industrie et finance</span>
+                        </div>
+                        <div class="flex gap-4">
+                            <span class="font-mono font-medium w-14 shrink-0 text-primary">14:00</span>
+                            <span>Tables rondes sectorielles</span>
+                        </div>
+                        <div class="flex gap-4">
+                            <span class="font-mono font-medium w-14 shrink-0 text-primary">17:30</span>
+                            <span>Cocktail de networking</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="glass rounded-xl p-5">
+                    <h3 class="font-semibold text-lg mb-4 text-primary">Jour 2 : 21 Novembre</h3>
+                    <div class="space-y-3 text-gray-300 text-sm">
+                        <div class="flex gap-4">
+                            <span class="font-mono font-medium w-14 shrink-0 text-primary">09:00</span>
+                            <span>Ateliers pratiques au choix</span>
+                        </div>
+                        <div class="flex gap-4">
+                            <span class="font-mono font-medium w-14 shrink-0 text-primary">13:30</span>
+                            <span>Démonstrations de startups et projets IA</span>
+                        </div>
+                        <div class="flex gap-4">
+                            <span class="font-mono font-medium w-14 shrink-0 text-primary">16:00</span>
+                            <span>Conférence de clôture</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Boutons action -->
+            <div class="flex flex-col sm:flex-row gap-3">
+                <button id="add-calendar" class="flex-1 py-4 px-6 rounded-xl bg-gradient-to-r from-primary to-secondary font-semibold hover:scale-[1.02] transition-all shadow-lg shadow-primary/20">
+                    <i class="fa fa-calendar-plus-o mr-2"></i>Ajouter au calendrier
+                </button>
+                <a href="/cdn-cgi/l/email-protection#abc8c4c5dfcac8dfebd8cec6c2c5cac2d9ce86c2ca85cfd1" class="flex-1 py-4 px-6 rounded-xl glass font-semibold hover:bg-white/10 transition-all text-center">
+                    <i class="fa fa-envelope-o mr-2"></i>Contacter
+                </a>
+            </div>
+        </main>
+    </div>
+
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+        // Animation réseau de neurones en fond
         const canvas = document.getElementById('neural-bg');
         const ctx = canvas.getContext('2d');
         let particles = [];
+
         function resizeCanvas() {
-            canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
             particles = [];
-            const count = Math.floor((canvas.width*canvas.height)/18000);
-            for(let i=0;i<count;i++) particles.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,vx:(Math.random()-0.5)*0.4,vy:(Math.random()-0.5)*0.4,r:Math.random()*2+1});
-        }
-        function draw() {
-            ctx.clearRect(0,0,canvas.width,canvas.height);
-            particles.forEach((p,i)=>{
-                p.x+=p.vx; p.y+=p.vy;
-                if(p.x<0||p.x>canvas.width)p.vx*=-1; if(p.y<0||p.y>canvas.height)p.vy*=-1;
-                ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fillStyle='rgba(139,92,246,0.5)'; ctx.fill();
-                particles.slice(i+1).forEach(p2=>{
-                    const dx=p.x-p2.x,dy=p.y-p2.y,d=Math.sqrt(dx*dx+dy*dy);
-                    if(d<120){ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p2.x,p2.y);ctx.strokeStyle=`rgba(139,92,246,${0.2*(1-d/120)})`;ctx.stroke();}
-                })
-            })
-            requestAnimationFrame(draw);
-        }
-        window.addEventListener('resize', resizeCanvas); resizeCanvas(); draw();
-
-        // Navigation
-        const landing = document.getElementById('landing-page');
-        const infoPage = document.getElementById('info-page');
-        const arContainer = document.getElementById('ar-container');
-
-        document.getElementById('skip-ar').addEventListener('click', () => {
-            landing.classList.add('hidden'); infoPage.classList.remove('hidden'); window.scrollTo(0,0);
-        });
-        document.getElementById('back-to-landing').addEventListener('click', () => {
-            infoPage.classList.add('hidden'); landing.classList.remove('hidden'); window.scrollTo(0,0);
-        });
-
-        // Lancement AR
-        document.getElementById('launch-ar').addEventListener('click', async () => {
-            landing.classList.add('hidden');
-            arContainer.style.display = 'block';
-
-            // Vérifier accès caméra
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-                document.getElementById('camera-loading').classList.add('hidden');
-                document.getElementById('camera-ok').classList.remove('hidden');
-                // Arrêter le stream de test, AR.js va prendre le relais
-                stream.getTracks().forEach(t => t.stop());
-
-                // Si la caméra ne s'affiche pas au bout de 5 secondes, afficher erreur
-                setTimeout(() => {
-                    const videoEl = document.querySelector('video');
-                    if (!videoEl || videoEl.videoWidth === 0) {
-                        document.getElementById('camera-ok').classList.add('hidden');
-                        document.getElementById('camera-error').classList.remove('hidden');
-                    }
-                }, 5000);
-
-            } catch (err) {
-                document.getElementById('camera-loading').classList.add('hidden');
-                document.getElementById('camera-error').classList.remove('hidden');
-                console.error(err);
+            const count = Math.floor((canvas.width * canvas.height) / 20000);
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    vx: (Math.random() - 0.5) * 0.3,
+                    vy: (Math.random() - 0.5) * 0.3,
+                    r: Math.random() * 1.5 + 0.8
+                });
             }
-        });
+        }
 
-        document.getElementById('close-ar').addEventListener('click', () => {
-            arContainer.style.display = 'none';
-            // Arrêter le flux caméra
-            const videoEl = document.querySelector('video');
-            if (videoEl && videoEl.srcObject) videoEl.srcObject.getTracks().forEach(t => t.stop());
-            landing.classList.remove('hidden');
-            // Reset messages statut
-            document.getElementById('camera-loading').classList.remove('hidden');
-            document.getElementById('camera-error').classList.add('hidden');
-            document.getElementById('camera-ok').classList.add('hidden');
-        });
+        function drawParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach((p, i) => {
+                p.x += p.vx; p.y += p.vy;
+                if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+                if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
 
-        // Bouton AR vers infos
-        document.getElementById('ar-info-button').addEventListener('click', () => {
-            arContainer.style.display = 'none';
-            const videoEl = document.querySelector('video');
-            if (videoEl && videoEl.srcObject) videoEl.srcObject.getTracks().forEach(t => t.stop());
-            infoPage.classList.remove('hidden');
-        });
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(139, 92, 246, 0.5)';
+                ctx.fill();
 
-        // Chatbot
-        const chatToggle = document.getElementById('chat-toggle');
-        const openChat = document.getElementById('open-chat-landing');
-        const closeChat = document.getElementById('close-chat');
-        const chatWindow = document.getElementById('chat-window');
+                particles.slice(i+1).forEach(p2 => {
+                    const dx = p.x - p2.x, dy = p.y - p2.y, d = Math.sqrt(dx*dx + dy*dy);
+                    if (d < 100) {
+                        ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p2.x, p2.y);
+                        ctx.strokeStyle = `rgba(139, 92, 246, ${0.2 * (1 - d/100)})`;
+                        ctx.stroke();
+                    }
+                });
+            });
+            requestAnimationFrame(drawParticles);
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        drawParticles();
+
+        // Logique du chat
+        const chatContainer = document.getElementById('chat-container');
         const chatForm = document.getElementById('chat-form');
         const chatInput = document.getElementById('chat-input');
-        const chatMessages = document.getElementById('chat-messages');
-        const typing = document.getElementById('typing-indicator');
+        const quickReplies = document.querySelectorAll('.quick-reply');
+        const typingIndicator = document.createElement('div');
+        typingIndicator.className = 'flex items-start gap-3 animate-fade-in-up';
+        typingIndicator.innerHTML = `
+            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center shrink-0">🤖</div>
+            <div class="chat-bubble-bot p-3 typing-indicator">
+                <span></span><span></span><span></span>
+            </div>
+        `;
 
-        function toggleChat(){
-            chatWindow.classList.toggle('translate-y-8');
-            chatWindow.classList.toggle('opacity-0');
-            chatWindow.classList.toggle('pointer-events-none');
-            if(!chatWindow.classList.contains('pointer-events-none')) chatInput.focus();
+        function addMessage(content, isUser = false, delay = 0) {
+            return new Promise(resolve => {
+                setTimeout(() => {
+                    const msgDiv = document.createElement('div');
+                    msgDiv.className = `flex items-start gap-3 animate-fade-in-up ${isUser ? 'flex-row-reverse' : ''}`;
+
+                    const avatar = document.createElement('div');
+                    avatar.className = `w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${isUser ? 'bg-white/10' : 'bg-gradient-to-br from-primary to-secondary'}`;
+                    avatar.innerHTML = isUser ? '<i class="fa fa-user text-white text-sm"></i>' : '🤖';
+
+                    const bubble = document.createElement('div');
+                    bubble.className = `${isUser ? 'chat-bubble-user' : 'chat-bubble-bot'} p-4 max-w-[85%] text-sm leading-relaxed`;
+                    bubble.innerHTML = content;
+
+                    msgDiv.append(avatar, bubble);
+                    chatContainer.append(msgDiv);
+                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                    resolve();
+                }, delay);
+            });
         }
-        chatToggle.addEventListener('click', toggleChat);
-        openChat.addEventListener('click', toggleChat);
-        closeChat.addEventListener('click', toggleChat);
 
+        // Base de connaissances du chatbot
         const kb = [
-            {kw:['lieu','adresse','où','ou'], r:"Le séminaire a lieu au Centre International de Conférences d'Alger, à Cheraga. Vous pouvez trouver l'itinéraire sur la page informations."},
-            {kw:['date','durée','jours','combien','horaire'], r:"Le séminaire dure 2 jours, les 20 et 21 Novembre 2026, de 09h à 18h chaque jour."},
-            {kw:['programme','conference','atelier'], r:"Au programme : des conférences sur l'IA dans différents secteurs, des tables rondes, des ateliers pratiques et des sessions de networking. Le planning détaillé est sur la page informations."},
-            {kw:['parking','acces','transport','venir'], r:"Un parking gratuit est disponible sur place pour tous les participants. Des navettes sont mises en place depuis la station de métro Tafourah."},
-            {kw:['repas','manger','restauration'], r:"Tous les repas (petit-déjeuner, déjeuners, pauses café) sont inclus dans l'inscription."},
-            {kw:['inscription','gratuit','tarif'], r:"L'inscription est gratuite, les places sont limitées. Vous pouvez contacter l'organisation pour réserver votre place."},
-            {kw:['contact','mail'], r:"Vous pouvez écrire à l'organisation à l'adresse contact@seminaire-ia.dz."},
-            {kw:['bonjour','salut'], r:"Bonjour ! Que puis-je faire pour vous ?"},
-            {kw:['merci'], r:"Je vous en prie ! N'hésitez pas si vous avez d'autres questions."}
+            {
+                kw: ['lieu', 'adresse', 'où', 'ou', 'endroit', 'salle'],
+                r: "L'événement se déroule au <strong>Centre International de Conférences d'Alger, à Cheraga</strong>. Tu peux consulter la carte et l'itinéraire en cliquant sur le bouton en haut à droite."
+            },
+            {
+                kw: ['date', 'quand', 'jour', 'horaire', 'heure', 'durée', 'duree', 'jours', 'combien'],
+                r: "Le séminaire dure <strong>2 jours</strong>, les <strong>20 et 21 Novembre 2026</strong>, de 09h à 18h chaque jour."
+            },
+            {
+                kw: ['venir', 'acces', 'accès', 'parking', 'voiture', 'transport', 'métro', 'metro', 'bus'],
+                r: "🚗 Un parking gratuit est disponible sur place.<br>🚌 Une navette dessert la station de métro Tafourah toutes les 30 minutes entre 8h et 9h30."
+            },
+            {
+                kw: ['programme', 'conference', 'conférence', 'atelier', 'horaire'],
+                r: "Le programme est disponible en intégralité sur la page informations : conférences sectorielles, ateliers pratiques, tables rondes et sessions de networking. Clique sur le bouton en haut à droite pour le consulter !"
+            },
+            {
+                kw: ['manger', 'repas', 'restauration', 'déjeuner', 'dejeuner', 'petit-dejeuner', 'cocktail'],
+                r: "🍽️ Tous les repas sont inclus : petit-déjeuner d'accueil, déjeuner, pauses café et cocktail de clôture. Des options végétariennes sont prévues."
+            },
+            {
+                kw: ['inscription', 'gratuit', 'tarif', 'prix', 'place'],
+                r: "✅ L'inscription est entièrement gratuite, les places sont limitées. Tu peux contacter l'organisation pour réserver ta place à l'adresse contact@seminaire-ia.dz."
+            },
+            {
+                kw: ['contact', 'mail', 'telephone', 'téléphone', 'question'],
+                r: "📧 Tu peux contacter l'organisation à tout moment à <strong>contact@seminaire-ia.dz</strong>."
+            },
+            {
+                kw: ['bonjour', 'salut', 'hello', 'bonsoir', 'coucou'],
+                r: "Bonjour ! Ravi de t'accueillir pour le séminaire IA ! Que souhaites-tu savoir ? 😊"
+            },
+            {
+                kw: ['merci', 'super', 'genial', 'génial'],
+                r: "Je t'en prie ! N'hésite pas si tu as d'autres questions, je suis là. À très bientôt au séminaire ! 🚀"
+            }
         ];
 
-        function getResponse(msg){
-            const l = msg.toLowerCase();
-            for(const e of kb) if(e.kw.some(k=>l.includes(k))) return e.r;
-            return "Je n'ai pas cette information pour le moment, vous pouvez contacter l'organisation à contact@seminaire-ia.dz.";
+        function getBotResponse(msg) {
+            const lower = msg.toLowerCase();
+            for (const entry of kb) {
+                if (entry.kw.some(k => lower.includes(k))) return entry.r;
+            }
+            return "Je n'ai pas l'information exacte sur ce point pour le moment ! N'hésite pas à contacter l'organisation à contact@seminaire-ia.dz, ils répondront à toutes tes questions.";
         }
 
-        function addMsg(txt, user=false){
-            const d = document.createElement('div');
-            d.className = `flex items-start gap-3 ${user?'flex-row-reverse':''}`;
-            const a = document.createElement('div');
-            a.className = `w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${user?'bg-white/20':'bg-gradient-to-br from-primary to-secondary'}`;
-            a.innerHTML = user?'<i class="fa fa-user text-white text-sm"></i>':'🤖';
-            const b = document.createElement('div');
-            b.className = `${user?'chat-bubble-user':'chat-bubble-bot'} p-3 max-w-[80%]`;
-            b.textContent = txt;
-            d.append(a,b); chatMessages.append(d); chatMessages.scrollTop = chatMessages.scrollHeight;
+        async function sendMessage(text, isUser = true) {
+            if (isUser) await addMessage(text, true);
+            chatInput.value = '';
+
+            // Afficher indicateur frappe
+            chatContainer.append(typingIndicator);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+
+            // Délai de réponse naturel
+            await new Promise(r => setTimeout(r, 900 + Math.random() * 700));
+            typingIndicator.remove();
+
+            const response = isUser ? getBotResponse(text) : text;
+            await addMessage(response, false);
         }
 
-        chatForm.addEventListener('submit', e=>{
-            e.preventDefault();
-            const m = chatInput.value.trim(); if(!m) return;
-            addMsg(m, true); chatInput.value='';
-            typing.classList.remove('hidden');
-            setTimeout(()=>{typing.classList.add('hidden'); addMsg(getResponse(m), false);}, 800+Math.random()*700);
+        // Message d'accueil automatique à l'ouverture
+        async function startConversation() {
+            await addMessage("Bonjour et bienvenue pour ton invitation au Séminaire Intelligence Artificielle ! 🤖", false, 500);
+            await addMessage("Voici les informations clés :<br><br>📅 <strong>Quand ?</strong> Les 20 et 21 Novembre 2026 (2 jours)<br>📍 <strong>Où ?</strong> Centre International de Conférences, Cheraga - Alger<br>🚀 <strong>Au programme :</strong> Conférences, ateliers pratiques et networking", false, 1200);
+            await addMessage("Si tu as la moindre question sur l'événement, l'accès, le programme ou l'organisation, n'hésite pas à me la poser, je suis là pour te répondre !<br><br>Tu peux aussi cliquer sur le bouton ci-dessous pour accéder au programme complet.", false, 1500);
+
+            // Ajouter le bouton vers les infos après le dernier message
+            await new Promise(r => setTimeout(r, 500));
+            const btnDiv = document.createElement('div');
+            btnDiv.className = 'animate-fade-in-up';
+            btnDiv.innerHTML = `
+                <button id="view-program" class="ml-11 py-3 px-6 rounded-xl bg-gradient-to-r from-primary to-secondary font-medium hover:scale-[1.02] transition-all animate-pulse-glow shadow-lg shadow-primary/20">
+                    Voir le programme complet <i class="fa fa-arrow-right ml-2"></i>
+                </button>
+            `;
+            chatContainer.append(btnDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+
+            document.getElementById('view-program').addEventListener('click', showInfoPage);
+        }
+
+        // Navigation page infos
+        const infoPage = document.getElementById('info-page');
+        const infoBtn = document.getElementById('info-btn');
+        const backBtn = document.getElementById('back-to-chat');
+
+        function showInfoPage() {
+            infoPage.style.transform = 'translateY(0)';
+            document.body.style.overflow = 'hidden';
+        }
+
+        infoBtn.addEventListener('click', showInfoPage);
+        backBtn.addEventListener('click', () => {
+            infoPage.style.transform = 'translateY(100%)';
+            document.body.style.overflow = 'auto';
         });
 
-        // Ajout calendrier
-        document.getElementById('add-calendar').addEventListener('click', ()=>{
+        // Envoi formulaire
+        chatForm.addEventListener('submit', e => {
+            e.preventDefault();
+            const msg = chatInput.value.trim();
+            if (!msg) return;
+            sendMessage(msg);
+        });
+
+        // Réponses rapides
+        quickReplies.forEach(btn => {
+            btn.addEventListener('click', () => {
+                sendMessage(btn.textContent);
+            });
+        });
+
+        // Ajouter événement au calendrier
+        document.getElementById('add-calendar').addEventListener('click', () => {
             const ics = `BEGIN:VCALENDAR
 VERSION:2.0
 BEGIN:VEVENT
@@ -522,9 +475,15 @@ SUMMARY:Séminaire Intelligence Artificielle
 LOCATION:Centre International de Conférences d'Alger, Cheraga
 END:VEVENT
 END:VCALENDAR`;
-            const blob = new Blob([ics],{type:'text/calendar'}), url=URL.createObjectURL(blob), a=document.createElement('a');
-            a.href=url;a.download='seminaire-ia.ics';a.click();URL.revokeObjectURL(url);
+            const blob = new Blob([ics], {type:'text/calendar'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href=url; a.download='seminaire-ia.ics'; a.click();
+            URL.revokeObjectURL(url);
         });
+
+        // Lancer la conversation au chargement
+        window.addEventListener('load', startConversation);
     </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a58c858b5f17376c',t:'MTc5NDM5MTk3OA=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a58c858b5f17376c',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a58c92491cb257fb',t:'MTc5NDM5MjUwMA=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a58c92491cb257fb',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
