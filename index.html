@@ -164,10 +164,10 @@
 
             <div>
                 <div class="glass rounded-2xl p-8 text-center">
-                    <p class="text-gray-300 mb-4 font-medium">👇 Motif à pointer avec la caméra du téléphone :</p>
-                    <!-- Marqueur Hiro que la caméra détectera -->
-                    <img src="https://raw.githubusercontent.com/AR-js-org/AR.js/master/data/images/hiro.png" alt="Marqueur AR" class="w-64 h-64 mx-auto rounded-lg bg-white">
-                    <p class="text-gray-400 text-sm mt-4">C'est ce motif qui sera intégré discrètement au centre de votre QR code sur les cartes imprimées finales.</p>
+                    <p class="text-gray-300 mb-4 font-medium">👇 Votre QR code officiel de l'invitation :</p>
+                    <img id="official-qr" src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&color=6366f1&bgcolor=0b0f1a&qzone=2&data=https://moonlightshine1923-ship-it.github.io/invitation-seminaire-ia/" alt="QR Code invitation" class="w-64 h-64 mx-auto rounded-lg border border-white/10 bg-white p-2">
+                    <p class="text-gray-400 text-sm mt-4">📌 Pour tester l'AR : pointez la caméra de votre téléphone vers le motif carré noir ci-dessous</p>
+                    <img src="https://raw.githubusercontent.com/AR-js-org/AR.js/master/data/images/hiro.png" alt="Marqueur AR test" class="w-24 h-24 mx-auto mt-3 rounded bg-white">
                 </div>
             </div>
         </div>
@@ -484,5 +484,5 @@ END:VCALENDAR`;
             a.href=url;a.download='seminaire-ia.ics';a.click();URL.revokeObjectURL(url);
         });
     </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a58c73fd1d38d959',t:'MTc5NDM5MTI1OQ=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a58c73fd1d38d959',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
